@@ -1,0 +1,173 @@
+{
+  "database": "Firestore",
+  "entities": {
+    "Product": {
+      "description": "AI Bot product information",
+      "schema": {
+        "id": "string (unique identifier)",
+        "name": "string (English name)",
+        "name_es": "string (Spanish name)",
+        "description": "string (English description)",
+        "description_es": "string (Spanish description)",
+        "prices": {
+          "usd": "number (price in cents)",
+          "cop": "number (price in cents)"
+        },
+        "image": "string (image key for placeholder system)"
+      },
+      "storage": "Static file: src/lib/products.ts"
+    },
+    "Transaction": {
+      "description": "Payment transaction record",
+      "schema": {
+        "id": "string (unique transaction ID)",
+        "orderId": "string (unique order ID)",
+        "productId": "string (references Product.id)",
+        "userId": "string (references User UID from Firebase Auth)",
+        "amount": "number (transaction amount in cents)",
+        "currency": "string (USD or COP)",
+        "status": "string (PENDING | PAID | FAILED | CANCELLED)",
+        "paymentLink": "string (optional - Bold.co payment URL)",
+        "boldTransactionId": "string (optional - Bold.co transaction ID)",
+        "createdAt": "string (ISO 8601 timestamp)",
+        "updatedAt": "string (ISO 8601 timestamp)",
+        "customer": {
+          "name": "string",
+          "email": "string",
+          "phone": "string"
+        }
+      },
+      "storage": "Firestore collection path: users/{userId}/transactions/{transactionId}"
+    }
+  },
+  "firestoreStructure": {
+    "users": {
+      "description": "Root collection for user data",
+      "documentId": "Firebase Auth UID",
+      "subcollections": {
+        "transactions": {
+          "description": "User's transaction history",
+          "documentId": "Transaction ID",
+          "schema": "See Transaction entity above"
+        }
+      }
+    }
+  },
+  "externalAPIs": {
+    "Bold.co": {
+      "baseUrl": "https://api.bold.co/v2",
+      "endpoints": {
+        "createPaymentLink": {
+          "path": "/payment-links",
+          "method": "POST",
+          "authentication": "x-api-key header",
+          "requestBody": {
+            "amount": "number (in cents)",
+            "currency": "string (USD or COP)",
+            "orderId": "string (unique order ID)",
+            "description": "string",
+            "redirectUrl": "string (return URL after payment)",
+            "paymentMethods": {
+              "metadata": {
+                "productId": "string",
+                "userId": "string"
+              }
+            },
+            "customer": {
+              "name": "string",
+              "email": "string",
+              "phone": "string"
+            }
+          },
+          "response": {
+            "paymentLink": "string (URL for customer to complete payment)",
+            "id": "string (Bold transaction ID)"
+          }
+        },
+        "webhooks": {
+          "path": "/webhooks/bold",
+          "method": "POST",
+          "authentication": "x-bold-signature header (HMAC-SHA256)",
+          "events": [
+            "transaction.created",
+            "transaction.updated"
+          ],
+          "eventPayload": {
+            "type": "string (event type)",
+            "data": {
+              "id": "string (Bold transaction ID)",
+              "orderId": "string",
+              "amount": "number",
+              "currency": "string",
+              "status": "string",
+              "paymentMethod": "string (optional)",
+              "customer": {
+                "name": "string",
+                "email": "string",
+                "phone": "string"
+              },
+              "metadata": {
+                "productId": "string",
+                "userId": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Firebase": {
+      "services": {
+        "Authentication": "Email/Password provider for user login and signup",
+        "Firestore": "NoSQL database for storing transactions",
+        "FirebaseAdmin": "Server-side SDK for secure operations"
+      }
+    },
+    "Genkit": {
+      "description": "AI framework for payment notifications",
+      "flows": {
+        "paymentNotification": {
+          "trigger": "Webhook handler on successful payment",
+          "input": {
+            "orderId": "string",
+            "transactionId": "string",
+            "amount": "number",
+            "currency": "string",
+            "customerName": "string",
+            "customerEmail": "string",
+            "customerPhone": "string",
+            "productId": "string",
+            "status": "string"
+          },
+          "tools": [
+            "sendWhatsAppNotification"
+          ],
+          "output": {
+            "notificationSent": "boolean",
+            "message": "string",
+            "error": "string (optional)"
+          }
+        }
+      }
+    }
+  },
+  "environmentVariables": {
+    "client": [
+      "NEXT_PUBLIC_FIREBASE_API_KEY",
+      "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
+      "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
+      "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
+      "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+      "NEXT_PUBLIC_FIREBASE_APP_ID",
+      "NEXT_PUBLIC_BASE_URL"
+    ],
+    "server": [
+      "FIREBASE_ADMIN_PROJECT_ID",
+      "FIREBASE_ADMIN_CLIENT_EMAIL",
+      "FIREBASE_ADMIN_PRIVATE_KEY",
+      "BOLD_API_KEY",
+      "BOLD_WEBHOOK_SECRET",
+      "GOOGLE_GENAI_API_KEY",
+      "ADMIN_PHONE_NUMBER"
+    ]
+  }
+}
