@@ -339,4 +339,5 @@ Contributions are welcome! Please follow these steps:
 
 Built with ❤️ using Next.js, Firebase, and Bold.co
 #   e a s y b o t s  
+ #   e a s y b o t s w e b s i t e  
  
