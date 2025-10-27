@@ -1,406 +1,588 @@
-# Deployment Guide for EasyBots Store
+# Deployment Guide for pnptv.app
 
-## Option 1: Vercel (Recommended) ⭐
+This guide covers deploying the EasyBots Store application to your VPS/Cloud server with the domain **pnptv.app**.
 
-### Prerequisites
-- GitHub account
-- Vercel account (sign up at [vercel.com](https://vercel.com))
+## Prerequisites
 
-### Step-by-Step Deployment
+- A VPS or Cloud server (Ubuntu 20.04+ or similar)
+- Root or sudo access to the server
+- Domain **pnptv.app** registered
+- Access to DNS management for pnptv.app
 
-#### 1. Prepare Your Repository
+## Server Requirements
 
-First, initialize Git and push to GitHub:
+- **OS**: Ubuntu 20.04 LTS or later (Debian-based)
+- **RAM**: Minimum 1GB (2GB recommended)
+- **CPU**: 1 vCPU minimum (2+ recommended)
+- **Storage**: 20GB minimum
+- **Node.js**: 18.x or later
+- **PM2**: Latest version
+- **Nginx**: Latest version
 
-```bash
-cd easybots-store
+## Step-by-Step Deployment
 
-# Initialize Git (if not already done)
-git init
+### 1. Initial Server Setup
 
-# Create .gitignore to exclude sensitive files
-echo "node_modules
-.next
-.env.local
-.env
-.DS_Store
-*.log" > .gitignore
-
-# Add all files
-git add .
-git commit -m "Initial commit: EasyBots Store"
-
-# Create a new repository on GitHub, then:
-git remote add origin https://github.com/YOUR_USERNAME/easybots-store.git
-git branch -M main
-git push -u origin main
-```
-
-#### 2. Deploy to Vercel
-
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Click "Import Project"
-3. Select your GitHub repository
-4. Vercel will auto-detect Next.js settings
-5. Click "Deploy"
-
-#### 3. Configure Environment Variables
-
-After deployment, go to your project settings:
-
-1. Navigate to **Settings** → **Environment Variables**
-2. Add all variables from your `.env.local`:
-
-```env
-# Firebase Client Configuration
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_BASE_URL=https://your-app.vercel.app
-
-# Firebase Admin (Server-side)
-FIREBASE_ADMIN_PROJECT_ID=your_project_id
-FIREBASE_ADMIN_CLIENT_EMAIL=your_service_account@project.iam.gserviceaccount.com
-FIREBASE_ADMIN_PRIVATE_KEY=your_private_key_here
-
-# Bold.co
-BOLD_API_KEY=your_bold_api_key
-BOLD_WEBHOOK_SECRET=your_webhook_secret
-
-# Google AI
-GOOGLE_GENAI_API_KEY=your_google_genai_api_key
-
-# Admin Phone
-ADMIN_PHONE_NUMBER=+1234567890
-```
-
-3. Select environments: **Production**, **Preview**, and **Development**
-4. Click "Save"
-
-#### 4. Redeploy
-
-After adding environment variables:
-1. Go to **Deployments**
-2. Click on the latest deployment
-3. Click **Redeploy**
-
-#### 5. Configure Bold.co Webhook
-
-1. Get your Vercel deployment URL (e.g., `https://easybots-store.vercel.app`)
-2. Go to Bold.co dashboard
-3. Set webhook URL to: `https://easybots-store.vercel.app/api/webhooks/bold`
-4. Enable events: `transaction.created` and `transaction.updated`
-
-### ✅ Done! Your app is live!
-
----
-
-## Option 2: Netlify
-
-### Step-by-Step Deployment
-
-#### 1. Build Configuration
-
-Create a `netlify.toml` file in your project root:
-
-```toml
-[build]
-  command = "npm run build"
-  publish = ".next"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-```
-
-#### 2. Deploy
-
-1. Push code to GitHub
-2. Go to [netlify.com](https://netlify.com)
-3. Click "New site from Git"
-4. Connect your repository
-5. Netlify auto-detects Next.js
-6. Add environment variables in **Site settings** → **Environment variables**
-7. Deploy
-
----
-
-## Option 3: Railway
-
-### Step-by-Step Deployment
-
-#### 1. Create railway.json (optional)
-
-```json
-{
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "npm install && npm run build"
-  },
-  "deploy": {
-    "startCommand": "npm start",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
-}
-```
-
-#### 2. Deploy
-
-1. Push code to GitHub
-2. Go to [railway.app](https://railway.app)
-3. Click "New Project"
-4. Select "Deploy from GitHub repo"
-5. Select your repository
-6. Railway auto-detects Next.js
-7. Add environment variables in **Variables** tab
-8. Deploy
-
----
-
-## Option 4: Render
-
-### Step-by-Step Deployment
-
-#### 1. Create render.yaml (optional)
-
-```yaml
-services:
-  - type: web
-    name: easybots-store
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: NODE_VERSION
-        value: 18.17.0
-```
-
-#### 2. Deploy
-
-1. Push code to GitHub
-2. Go to [render.com](https://render.com)
-3. Click "New Web Service"
-4. Connect your repository
-5. Configure:
-   - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npm start`
-6. Add environment variables
-7. Deploy
-
-**Note:** Free tier has cold starts (services sleep after 15 minutes of inactivity)
-
----
-
-## Option 5: Self-Hosted (VPS)
-
-### Prerequisites
-- VPS with Ubuntu 22.04 (DigitalOcean, AWS EC2, etc.)
-- Domain name (optional but recommended)
-
-### Step-by-Step Deployment
-
-#### 1. SSH into Your Server
+First, connect to your server via SSH:
 
 ```bash
 ssh root@your-server-ip
+# or
+ssh your-username@your-server-ip
 ```
 
-#### 2. Install Node.js
+Update system packages:
 
 ```bash
-# Update system
-apt update && apt upgrade -y
+sudo apt-get update && sudo apt-get upgrade -y
+```
 
-# Install Node.js 18
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt install -y nodejs
+### 2. Configure DNS
 
-# Verify installation
+Before deploying, configure your DNS records at your domain registrar:
+
+**For pnptv.app:**
+
+| Type  | Name | Value           | TTL  |
+|-------|------|-----------------|------|
+| A     | @    | YOUR_SERVER_IP  | 3600 |
+| A     | www  | YOUR_SERVER_IP  | 3600 |
+
+Or use CNAME for www:
+
+| Type  | Name | Value      | TTL  |
+|-------|------|------------|------|
+| A     | @    | YOUR_SERVER_IP | 3600 |
+| CNAME | www  | pnptv.app  | 3600 |
+
+**Note:** DNS propagation can take up to 48 hours, but usually completes within a few hours.
+
+Verify DNS propagation:
+```bash
+dig pnptv.app
+dig www.pnptv.app
+```
+
+### 3. Transfer Files to Server
+
+From your local machine, transfer the project to the server:
+
+**Option A: Using Git (Recommended)**
+
+On your server:
+```bash
+cd ~
+git clone https://github.com/your-username/easybots-store.git
+cd easybots-store
+```
+
+**Option B: Using SCP/RSYNC**
+
+From your local machine:
+```bash
+# Using rsync (recommended)
+rsync -avz --exclude 'node_modules' --exclude '.next' \
+  /c/Users/carlo/Documents/Easy\ Bots\ Website/easybots-store/ \
+  your-username@your-server-ip:~/easybots-store/
+
+# Or using scp
+scp -r /c/Users/carlo/Documents/Easy\ Bots\ Website/easybots-store \
+  your-username@your-server-ip:~/
+```
+
+### 4. Configure Environment Variables
+
+On your server, create the production environment file:
+
+```bash
+cd ~/easybots-store
+cp .env.production.example .env.production.local
+nano .env.production.local
+```
+
+Update the following critical values:
+
+```env
+# Update base URL
+NEXT_PUBLIC_BASE_URL=https://pnptv.app
+
+# Add your Firebase Admin private key (get from Firebase Console)
+FIREBASE_ADMIN_CLIENT_EMAIL=your-service-account@studio-9933426702-65d9f.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour-actual-private-key\n-----END PRIVATE KEY-----\n"
+
+# Set production mode for ePayco
+EPAYCO_TEST=false
+EPAYCO_TEST_MODE=false
+
+# Add your actual Google AI API key
+GOOGLE_GENAI_API_KEY=your_actual_google_ai_api_key
+
+# Add your WhatsApp number for notifications
+ADMIN_PHONE_NUMBER=+your_phone_number
+```
+
+Save and exit (Ctrl+X, then Y, then Enter in nano).
+
+### 5. Run Deployment Script
+
+Make the deployment script executable and run it:
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+The script will automatically:
+- Install Node.js, PM2, and Nginx
+- Install dependencies
+- Build the Next.js application
+- Start the app with PM2
+- Configure Nginx
+- Optionally set up SSL with Let's Encrypt
+
+**If you want to manually run each step**, see the [Manual Deployment](#manual-deployment) section below.
+
+### 6. Setup SSL Certificate
+
+If the deployment script didn't set up SSL, do it manually:
+
+```bash
+# Install Certbot
+sudo apt-get install -y certbot python3-certbot-nginx
+
+# Obtain SSL certificate
+sudo certbot --nginx -d pnptv.app -d www.pnptv.app
+
+# Follow the prompts:
+# - Enter your email address
+# - Agree to terms of service
+# - Choose to redirect HTTP to HTTPS (option 2)
+```
+
+Certbot will automatically:
+- Obtain the SSL certificate
+- Update your Nginx configuration
+- Set up auto-renewal
+
+Verify auto-renewal:
+```bash
+sudo certbot renew --dry-run
+```
+
+### 7. Configure Firewall
+
+Set up a firewall to allow only necessary traffic:
+
+```bash
+# Install UFW if not installed
+sudo apt-get install -y ufw
+
+# Allow SSH (IMPORTANT: Do this first!)
+sudo ufw allow ssh
+sudo ufw allow 22/tcp
+
+# Allow HTTP and HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# Enable firewall
+sudo ufw enable
+
+# Check status
+sudo ufw status
+```
+
+### 8. Verify Deployment
+
+Check that everything is running:
+
+```bash
+# Check PM2 status
+pm2 status
+
+# View application logs
+pm2 logs easybots-store
+
+# Check Nginx status
+sudo systemctl status nginx
+
+# Test Nginx configuration
+sudo nginx -t
+```
+
+Visit your site:
+- http://pnptv.app (should redirect to HTTPS)
+- https://pnptv.app
+
+### 9. Post-Deployment Configuration
+
+#### A. Update Firebase Configuration
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Navigate to **Authentication** → **Settings** → **Authorized domains**
+4. Add `pnptv.app` to the list
+
+#### B. Update ePayco Webhook URL
+
+1. Log in to [ePayco Dashboard](https://dashboard.epayco.co/)
+2. Go to **Integration** → **Webhooks** or **Confirmation URL**
+3. Update the webhook URL to: `https://pnptv.app/api/webhooks/epayco`
+4. Save changes
+
+#### C. Test Payment Flow
+
+1. Visit https://pnptv.app
+2. Create a test account
+3. Try purchasing a product with a test payment
+4. Verify webhook is received and processed
+5. Check logs: `pm2 logs easybots-store`
+
+## Manual Deployment
+
+If you prefer to deploy manually instead of using the script:
+
+### Install Node.js
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
 node --version
 npm --version
 ```
 
-#### 3. Install PM2 (Process Manager)
+### Install PM2
 
 ```bash
-npm install -g pm2
+sudo npm install -g pm2
+pm2 --version
 ```
 
-#### 4. Clone Your Repository
+### Install Nginx
 
 ```bash
-cd /var/www
-git clone https://github.com/YOUR_USERNAME/easybots-store.git
-cd easybots-store
+sudo apt-get install -y nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
 ```
 
-#### 5. Install Dependencies and Build
+### Build and Start Application
 
 ```bash
-npm install
+cd ~/easybots-store
+
+# Install dependencies
+npm ci
+
+# Build
 npm run build
-```
 
-#### 6. Create .env.local
-
-```bash
-nano .env.local
-# Paste your environment variables
-# Save with Ctrl+X, then Y, then Enter
-```
-
-#### 7. Start with PM2
-
-```bash
-pm2 start npm --name "easybots-store" -- start
+# Start with PM2
+pm2 start ecosystem.config.js
 pm2 save
 pm2 startup
 ```
 
-#### 8. Install and Configure Nginx
+### Configure Nginx
 
 ```bash
-apt install -y nginx
+# Copy Nginx configuration
+sudo cp nginx.conf /etc/nginx/sites-available/pnptv.app
 
-# Create Nginx config
-nano /etc/nginx/sites-available/easybots-store
+# Create symbolic link
+sudo ln -s /etc/nginx/sites-available/pnptv.app /etc/nginx/sites-enabled/
+
+# Test configuration
+sudo nginx -t
+
+# Reload Nginx
+sudo systemctl reload nginx
 ```
 
-Paste this configuration:
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com www.your-domain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-Enable the site:
+## Useful PM2 Commands
 
 ```bash
-ln -s /etc/nginx/sites-available/easybots-store /etc/nginx/sites-enabled/
-nginx -t
-systemctl restart nginx
+# View status
+pm2 status
+
+# View logs
+pm2 logs easybots-store
+
+# Restart application
+pm2 restart easybots-store
+
+# Stop application
+pm2 stop easybots-store
+
+# Monitor in real-time
+pm2 monit
+
+# View detailed info
+pm2 info easybots-store
 ```
 
-#### 9. Install SSL Certificate (Let's Encrypt)
+## Updating Your Application
+
+When you make changes and need to redeploy:
+
+### Option A: Using Git (Recommended)
 
 ```bash
-apt install -y certbot python3-certbot-nginx
-certbot --nginx -d your-domain.com -d www.your-domain.com
+cd ~/easybots-store
+
+# Pull latest changes
+git pull origin main
+
+# Install any new dependencies
+npm ci
+
+# Rebuild
+npm run build
+
+# Restart with PM2
+pm2 restart easybots-store
 ```
 
-#### 10. Configure Firewall
+### Option B: Manual File Transfer
 
 ```bash
-ufw allow OpenSSH
-ufw allow 'Nginx Full'
-ufw enable
+# From local machine
+rsync -avz --exclude 'node_modules' --exclude '.next' \
+  /c/Users/carlo/Documents/Easy\ Bots\ Website/easybots-store/ \
+  your-username@your-server-ip:~/easybots-store/
+
+# On server
+cd ~/easybots-store
+npm ci
+npm run build
+pm2 restart easybots-store
 ```
 
-### ✅ Your app is now live at https://your-domain.com
+### Quick Update Script
 
----
+Create `update.sh` on your server:
 
-## Comparison Table
+```bash
+#!/bin/bash
+cd ~/easybots-store
+git pull origin main
+npm ci
+npm run build
+pm2 restart easybots-store
+pm2 save
+echo "Application updated successfully!"
+pm2 status
+```
 
-| Platform | Free Tier | Setup Time | Best For | Cold Starts |
-|----------|-----------|------------|----------|-------------|
-| **Vercel** | ✅ Yes | 5 min | Next.js apps | ❌ No |
-| **Netlify** | ✅ Yes | 5 min | Static sites | ⚠️ Minimal |
-| **Railway** | ⚠️ $5 credit | 10 min | Full-stack | ❌ No |
-| **Render** | ✅ Yes | 10 min | Web services | ✅ Yes (free tier) |
-| **AWS Amplify** | ⚠️ Usage-based | 15 min | AWS ecosystem | ❌ No |
-| **VPS (Self-hosted)** | ❌ No ($5-10/mo) | 30-60 min | Full control | ❌ No |
+Make it executable:
+```bash
+chmod +x update.sh
+```
 
----
+Then update with:
+```bash
+./update.sh
+```
 
-## Post-Deployment Checklist
+## Monitoring and Logs
 
-After deploying to any platform:
+### Application Logs
 
-- [ ] Verify environment variables are set correctly
-- [ ] Test user signup and login
-- [ ] Test product display and language switcher
-- [ ] Create a test purchase (use Bold.co test mode if available)
-- [ ] Configure Bold.co webhook with your production URL
-- [ ] Test webhook by creating a test transaction
-- [ ] Verify AI notification flow works
-- [ ] Check Firebase rules and security
-- [ ] Set up custom domain (optional)
-- [ ] Configure SSL certificate (usually automatic)
-- [ ] Set up monitoring/analytics (Vercel Analytics, Google Analytics, etc.)
+```bash
+# Real-time logs
+pm2 logs easybots-store --lines 100
 
----
+# Error logs only
+pm2 logs easybots-store --err
+
+# Flush logs
+pm2 flush
+```
+
+### Nginx Logs
+
+```bash
+# Access logs
+sudo tail -f /var/log/nginx/pnptv.app-access.log
+
+# Error logs
+sudo tail -f /var/log/nginx/pnptv.app-error.log
+```
+
+### System Monitoring
+
+```bash
+# PM2 monitoring dashboard
+pm2 monit
+
+# System resources
+htop
+# or
+top
+```
 
 ## Troubleshooting
 
-### Build Fails
+### Application Won't Start
 
-**Common issues:**
-- Missing environment variables → Add them in platform settings
-- Node version mismatch → Set Node version to 18.x
-- Dependency conflicts → Delete node_modules and package-lock.json, reinstall
+```bash
+# Check logs
+pm2 logs easybots-store
 
-### Webhooks Not Working
+# Check environment variables
+cat .env.production.local
 
-**Check:**
-- Webhook URL is publicly accessible
-- Webhook URL includes `/api/webhooks/bold`
-- Bold.co webhook secret matches your environment variable
-- Server logs for signature verification errors
+# Try starting manually to see errors
+npm run start
+```
 
-### Firebase Connection Issues
+### Nginx Issues
 
-**Check:**
-- All NEXT_PUBLIC_* variables are set
-- Firebase Admin credentials are correct
-- Private key is properly formatted (with \n for newlines)
+```bash
+# Test configuration
+sudo nginx -t
 
-### API Routes Return 500 Errors
+# Check Nginx logs
+sudo tail -50 /var/log/nginx/error.log
 
-**Check:**
-- Server-side environment variables are set
-- Bold.co API key is correct
-- Firebase Admin SDK is initialized properly
-- Check platform logs for detailed errors
+# Restart Nginx
+sudo systemctl restart nginx
+```
+
+### Port Already in Use
+
+```bash
+# Check what's using port 3000
+sudo lsof -i :3000
+
+# Kill the process
+sudo kill -9 <PID>
+```
+
+### SSL Certificate Issues
+
+```bash
+# Check certificate status
+sudo certbot certificates
+
+# Renew manually
+sudo certbot renew
+
+# Check auto-renewal
+sudo certbot renew --dry-run
+```
+
+### Webhook Not Receiving Events
+
+1. Verify webhook URL in ePayco dashboard
+2. Check firewall allows HTTPS traffic: `sudo ufw status`
+3. Test webhook endpoint: `curl https://pnptv.app/api/webhooks/epayco`
+4. Check application logs: `pm2 logs easybots-store`
+
+### Database Connection Issues
+
+1. Verify Firebase credentials in `.env.production.local`
+2. Check Firebase Admin SDK private key format (must include `\n`)
+3. Test Firebase connection in logs
+
+## Security Best Practices
+
+1. **Keep System Updated**
+   ```bash
+   sudo apt-get update && sudo apt-get upgrade -y
+   ```
+
+2. **Use Strong Firewall Rules**
+   - Only open necessary ports (22, 80, 443)
+   - Consider changing SSH port from default 22
+
+3. **Secure SSH Access**
+   ```bash
+   # Disable password authentication (use SSH keys only)
+   sudo nano /etc/ssh/sshd_config
+   # Set: PasswordAuthentication no
+   sudo systemctl restart sshd
+   ```
+
+4. **Keep Environment Variables Secret**
+   - Never commit `.env.production.local` to Git
+   - Use proper file permissions: `chmod 600 .env.production.local`
+
+5. **Enable Automatic Security Updates**
+   ```bash
+   sudo apt-get install -y unattended-upgrades
+   sudo dpkg-reconfigure -plow unattended-upgrades
+   ```
+
+6. **Monitor Logs Regularly**
+   - Set up log monitoring
+   - Consider using a service like Sentry for error tracking
+
+## Backup Strategy
+
+Create automated backups:
+
+```bash
+#!/bin/bash
+# backup.sh
+BACKUP_DIR="/backup/easybots-store"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Backup application files
+tar -czf $BACKUP_DIR/app_$DATE.tar.gz ~/easybots-store \
+  --exclude='node_modules' --exclude='.next'
+
+# Keep only last 7 days of backups
+find $BACKUP_DIR -name "app_*.tar.gz" -mtime +7 -delete
+
+echo "Backup completed: app_$DATE.tar.gz"
+```
+
+Add to crontab for daily backups:
+```bash
+crontab -e
+# Add: 0 2 * * * /path/to/backup.sh
+```
+
+## Performance Optimization
+
+1. **Enable Nginx Caching**
+   - Already configured in `nginx.conf`
+
+2. **Use PM2 Cluster Mode**
+   - Already enabled in `ecosystem.config.js` with `instances: 'max'`
+
+3. **Monitor Resource Usage**
+   ```bash
+   pm2 monit
+   ```
+
+4. **Consider CDN**
+   - Use Cloudflare for static assets caching
+   - Add Cloudflare DNS and enable proxy
+
+## Support
+
+If you encounter issues:
+
+1. Check logs: `pm2 logs easybots-store`
+2. Verify environment variables: `.env.production.local`
+3. Test each component individually
+4. Review this documentation
+5. Contact support@easybots.store
+
+## Additional Resources
+
+- [Next.js Deployment Documentation](https://nextjs.org/docs/deployment)
+- [PM2 Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)
+- [Nginx Documentation](https://nginx.org/en/docs/)
+- [Let's Encrypt Documentation](https://letsencrypt.org/docs/)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [ePayco API Documentation](https://docs.epayco.com/)
 
 ---
 
-## Recommended: Vercel
-
-For the fastest and easiest deployment with the best Next.js support, use Vercel:
-
-1. Push to GitHub
-2. Import to Vercel
-3. Add environment variables
-4. Deploy
-
-**Time to deploy: ~5 minutes** ⚡
-
-**Cost: FREE** 💰
-
----
-
-## Need Help?
-
-If you encounter issues during deployment:
-1. Check platform-specific documentation
-2. Review error logs in the deployment dashboard
-3. Verify all environment variables are set correctly
-4. Test locally first with `npm run build && npm start`
-
-Good luck with your deployment! 🚀
+**Congratulations!** Your EasyBots Store is now deployed at https://pnptv.app
