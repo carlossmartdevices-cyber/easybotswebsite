@@ -1,6 +1,24 @@
 const translations = {
   en: {
-    welcome: 'Welcome to PNPtv!',
+    welcome: `🎉 Welcome, {name}…
+
+{badge} {tier}
+
+You now have {accessLevel} access to the PNPtv! community —
+the cult begins here. 🔥
+
+💎 Did you know? Premium members unlock the real fun:
+• 📸 Send & receive spicy photos + videos
+• 🎥 Host private video rooms
+• 📺 Full access to the PNPtv! PRIME channel (Santino, Lex & the boys)
+
+📋 Start your journey:
+• 📜 Read the law of the cult: /rules
+• 🧭 Open your command center: /menu
+• 🤖 Need help, daddy? /help
+
+🔥 Enjoy yourself. Explore. Connect.
+This is where the magic (and the chaos) happens.`,
     privateMessageSent: '@{username}, I sent you a private message about {command}!',
     cannotSendPrivate: '@{username}, I couldn\'t send you a private message. Please unblock me or start a chat with @{botUsername}!',
     commandNotFound: 'Command not found. Here\'s the main menu:',
@@ -11,7 +29,25 @@ const translations = {
     startInGroup: 'To use this bot, please start a private chat with me by clicking the button below:',
   },
   es: {
-    welcome: '¡Bienvenido a PNPtv!',
+    welcome: `🎉 Bienvenido, {name}…
+
+{badge} {tier}
+
+Ahora tienes acceso {accessLevel} a la comunidad PNPtv! —
+aquí empieza el culto. 🔥
+
+💎 ¿Sabías que los miembros Premium desbloquean lo realmente rico?
+• 📸 Enviar y recibir fotos + videos calientes
+• 🎥 Crear salas privadas de videollamada
+• 📺 Acceder al canal premium PNPtv! PRIME (Santino, Lex y los chicos)
+
+📋 Empieza tu viaje:
+• 📜 Lee las reglas sagradas: /rules
+• 🧭 Abre tu centro de comandos: /menu
+• 🤖 ¿Necesitas ayuda, bebé? /help
+
+🔥 Disfruta. Explora. Conecta.
+Aquí es donde empieza la magia… y el caos.`,
     privateMessageSent: '@{username}, te envié un mensaje privado sobre {command}!',
     cannotSendPrivate: '@{username}, no pude enviarte un mensaje privado. ¡Por favor desbloquéame o inicia un chat con @{botUsername}!',
     commandNotFound: 'Comando no encontrado. Aquí está el menú principal:',
