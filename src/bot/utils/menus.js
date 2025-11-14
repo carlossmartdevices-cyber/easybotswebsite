@@ -28,9 +28,11 @@ const getMainMenu = (language = 'en') => {
 const getSubscriptionMenu = (language = 'en') => {
   return {
     inline_keyboard: [
-      [{ text: '🆕 Basic ($9.99/month)', callback_data: 'plan_basic' }],
-      [{ text: '🌟 Premium ($19.99/month)', callback_data: 'plan_premium' }],
-      [{ text: '🏆 Gold ($49.99/month)', callback_data: 'plan_gold' }],
+      [{ text: '🆓 Trial (Free - 7 days)', callback_data: 'plan_trial' }],
+      [{ text: '📅 Monthly ($9.99 - 30 days)', callback_data: 'plan_monthly' }],
+      [{ text: '📆 Quarterly ($24.99 - 90 days)', callback_data: 'plan_quarterly' }],
+      [{ text: '🗓️ Yearly ($79.99 - 365 days)', callback_data: 'plan_yearly' }],
+      [{ text: '♾️ Lifetime ($199.99 - Unlimited)', callback_data: 'plan_lifetime' }],
       [{ text: '💳 Payment Help', callback_data: 'payment_help' }],
       [{ text: '🔙 Back', callback_data: 'back_to_main' }]
     ]
