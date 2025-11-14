@@ -55,9 +55,23 @@ const handleStart = async (ctx) => {
     }
   }
 
+  // Get user data for personalized welcome message
+  const isPrime = ctx.session?.isPrime || false;
+  const userName = ctx.from.first_name || ctx.from.username || 'Friend';
+
+  // Determine badge, tier, and access level based on premium status
+  const badge = isPrime ? '💎' : '🆓';
+  const tier = isPrime ? 'Premium Member' : 'Free Member';
+  const accessLevel = isPrime ? 'full' : 'free';
+
   // Show welcome message and main menu in private chat
   await ctx.reply(
-    t(language, 'welcome'),
+    t(language, 'welcome', {
+      name: userName,
+      badge: badge,
+      tier: tier,
+      accessLevel: accessLevel
+    }),
     {
       reply_markup: getMainMenu(language)
     }
