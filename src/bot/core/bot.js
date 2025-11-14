@@ -7,6 +7,7 @@ const config = require('../config/botConfig');
 const { chatTypeMiddleware } = require('./middleware/chatType');
 const { rateLimitMiddleware } = require('./middleware/rateLimit');
 const { sessionMiddleware } = require('./middleware/session');
+const { adminMiddleware, adminRateLimitMiddleware } = require('./middleware/adminMiddleware');
 
 // Import handlers
 const { handleStart } = require('../handlers/private/start');
@@ -22,6 +23,62 @@ const { handleZoomRoomsGroup, handleJoinZoom } = require('../handlers/group/zoom
 
 const { getMainMenu } = require('../utils/menus');
 const { t } = require('../config/i18n');
+
+// Admin handlers
+const { handleAdminDashboard, handleAdminClose } = require('../handlers/admin/dashboard');
+const {
+  handleBroadcast,
+  handleBroadcastText,
+  handleBroadcastPhoto,
+  handleBroadcastVideo,
+  processBroadcastMessage,
+  processBroadcastPhoto,
+  processBroadcastVideo,
+  handleBroadcastSendAll,
+  handleBroadcastSendPremium,
+  handleBroadcastSendFree
+} = require('../handlers/admin/broadcast');
+const {
+  handleUserManagement,
+  handleSearchUser,
+  processUserSearch,
+  handleActivateUser,
+  handleDeactivateUser,
+  handleExtendSubscription,
+  processExtendSubscription,
+  handleChangePlan,
+  handleAssignPlan,
+  handleUserStats,
+  handleExportUsers
+} = require('../handlers/admin/users');
+const {
+  handleAnalytics,
+  handleUserGrowth,
+  handleRevenue,
+  handleEngagement,
+  handlePlansOverview,
+  handleExportAnalytics
+} = require('../handlers/admin/analytics');
+const {
+  handlePlanManagement,
+  handleViewAllPlans,
+  handleManagePlan,
+  handleAddPlan,
+  processAddPlan,
+  handleEditPlan,
+  processEditPlan,
+  handleActivatePlan,
+  handleDeactivatePlan,
+  handlePlanAnalytics,
+  handleViewPlanAnalytics
+} = require('../handlers/admin/plans');
+const {
+  handleLogs,
+  handleAllLogs,
+  handleBroadcastLogs,
+  handleUserLogs,
+  handlePlanLogs
+} = require('../handlers/admin/logs');
 
 /**
  * Create and configure bot instance
@@ -59,6 +116,9 @@ function createBot() {
 
   // /request command for radio (group only)
   bot.command('request', handleRequestCommand);
+
+  // /admin command - ADMIN ONLY (works in both private and group chats)
+  bot.command('admin', adminMiddleware(), adminRateLimitMiddleware(), handleAdminDashboard);
 
   // ============================
   // CALLBACK QUERY HANDLERS
@@ -172,13 +232,95 @@ function createBot() {
   bot.action(/^join_zoom_\d+$/, handleJoinZoom);
 
   // ============================
+  // ADMIN CALLBACK HANDLERS
+  // ============================
+
+  // Admin dashboard
+  bot.action('admin_dashboard', adminMiddleware(), handleAdminDashboard);
+  bot.action('admin_close', adminMiddleware(), handleAdminClose);
+
+  // Broadcast callbacks
+  bot.action('admin_broadcast', adminMiddleware(), handleBroadcast);
+  bot.action('broadcast_text', adminMiddleware(), handleBroadcastText);
+  bot.action('broadcast_photo', adminMiddleware(), handleBroadcastPhoto);
+  bot.action('broadcast_video', adminMiddleware(), handleBroadcastVideo);
+  bot.action(/^broadcast_send_all_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleBroadcastSendAll(ctx, ctx.match[1]);
+  });
+  bot.action(/^broadcast_send_premium_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleBroadcastSendPremium(ctx, ctx.match[1]);
+  });
+  bot.action(/^broadcast_send_free_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleBroadcastSendFree(ctx, ctx.match[1]);
+  });
+
+  // User management callbacks
+  bot.action('admin_users', adminMiddleware(), handleUserManagement);
+  bot.action('admin_search_user', adminMiddleware(), handleSearchUser);
+  bot.action('admin_user_stats', adminMiddleware(), handleUserStats);
+  bot.action('admin_export_users', adminMiddleware(), handleExportUsers);
+  bot.action(/^admin_activate_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleActivateUser(ctx, ctx.match[1]);
+  });
+  bot.action(/^admin_deactivate_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleDeactivateUser(ctx, ctx.match[1]);
+  });
+  bot.action(/^admin_extend_sub_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleExtendSubscription(ctx, ctx.match[1]);
+  });
+  bot.action(/^admin_change_plan_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleChangePlan(ctx, ctx.match[1]);
+  });
+  bot.action(/^admin_assign_plan_(.+)_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleAssignPlan(ctx, ctx.match[1], ctx.match[2]);
+  });
+
+  // Analytics callbacks
+  bot.action('admin_analytics', adminMiddleware(), handleAnalytics);
+  bot.action('analytics_users', adminMiddleware(), handleUserGrowth);
+  bot.action('analytics_revenue', adminMiddleware(), handleRevenue);
+  bot.action('analytics_engagement', adminMiddleware(), handleEngagement);
+  bot.action('analytics_plans', adminMiddleware(), handlePlansOverview);
+  bot.action('analytics_export', adminMiddleware(), handleExportAnalytics);
+
+  // Plan management callbacks
+  bot.action('admin_plans', adminMiddleware(), handlePlanManagement);
+  bot.action('plan_view_all', adminMiddleware(), handleViewAllPlans);
+  bot.action('plan_add', adminMiddleware(), handleAddPlan);
+  bot.action('plan_analytics', adminMiddleware(), handlePlanAnalytics);
+  bot.action(/^plan_manage_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleManagePlan(ctx, ctx.match[1]);
+  });
+  bot.action(/^plan_edit_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleEditPlan(ctx, ctx.match[1]);
+  });
+  bot.action(/^plan_activate_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleActivatePlan(ctx, ctx.match[1]);
+  });
+  bot.action(/^plan_deactivate_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleDeactivatePlan(ctx, ctx.match[1]);
+  });
+  bot.action(/^plan_view_analytics_(.+)$/, adminMiddleware(), async (ctx) => {
+    await handleViewPlanAnalytics(ctx, ctx.match[1]);
+  });
+
+  // Logs callbacks
+  bot.action('admin_logs', adminMiddleware(), handleLogs);
+  bot.action('logs_all', adminMiddleware(), handleAllLogs);
+  bot.action('logs_broadcast', adminMiddleware(), handleBroadcastLogs);
+  bot.action('logs_users', adminMiddleware(), handleUserLogs);
+  bot.action('logs_plans', adminMiddleware(), handlePlanLogs);
+
+  // ============================
   // MESSAGE HANDLERS
   // ============================
 
-  // Handle photo uploads (for profile photo)
+  // Handle photo uploads (for profile photo or admin broadcast)
   bot.on('photo', async (ctx) => {
     if (ctx.isPrivateChat && ctx.session.expectingPhoto) {
       await processPhotoUpload(ctx);
+    } else if (ctx.session.adminAction === 'broadcast_photo') {
+      await processBroadcastPhoto(ctx);
     }
   });
 
@@ -189,16 +331,66 @@ function createBot() {
     }
   });
 
-  // Handle text messages (for bio, support, etc.)
+  // Handle video uploads (for admin broadcast)
+  bot.on('video', async (ctx) => {
+    if (ctx.session.adminAction === 'broadcast_video') {
+      await processBroadcastVideo(ctx);
+    }
+  });
+
+  // Handle text messages (for bio, support, admin actions, etc.)
   bot.on('text', async (ctx) => {
+    // Handle admin actions first (works in both private and group chats)
+    if (ctx.session.adminAction) {
+      const action = ctx.session.adminAction;
+
+      // Broadcast text message
+      if (action.startsWith('broadcast_')) {
+        await processBroadcastMessage(ctx);
+        return;
+      }
+
+      // User search
+      if (action === 'search_user') {
+        await processUserSearch(ctx);
+        return;
+      }
+
+      // Extend subscription
+      if (action.startsWith('extend_subscription_')) {
+        const userId = action.replace('extend_subscription_', '');
+        const days = parseInt(ctx.message.text);
+        if (!isNaN(days) && days > 0) {
+          await processExtendSubscription(ctx, userId, days);
+        } else {
+          await ctx.reply('❌ Invalid number. Please enter a valid number of days.');
+        }
+        return;
+      }
+
+      // Plan creation steps
+      if (action.startsWith('add_plan_')) {
+        await processAddPlan(ctx);
+        return;
+      }
+
+      // Plan editing
+      if (action.startsWith('edit_plan_')) {
+        const planId = action.replace('edit_plan_', '');
+        await processEditPlan(ctx, planId);
+        return;
+      }
+    }
+
+    // Handle private chat specific actions
     if (ctx.isPrivateChat) {
       // Check if expecting specific input
       if (ctx.session.expectingBio) {
         await processBioText(ctx);
       } else if (ctx.session.expectingSupportQuestion || ctx.session.expectingSupportTicket) {
         await processSupportQuestion(ctx);
-      } else {
-        // Unknown command in private chat
+      } else if (!ctx.session.adminAction) {
+        // Unknown command in private chat (only if not in admin flow)
         const language = ctx.session?.language || 'en';
         await ctx.reply(t(language, 'commandNotFound'), {
           reply_markup: getMainMenu(language)
