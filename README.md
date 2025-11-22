@@ -350,4 +350,4 @@ Built with ❤️ using Next.js, Firebase, and ePayco
  #   e a s y b o t s w e b s i t e  
  #   e a s y b o t s w e b s i t e  
  #   e a s y b o t s w e b s i t e  
- 
+ # easybots
